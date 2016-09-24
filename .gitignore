@@ -55,3 +55,4 @@ _gh_pages
 tmp
 temp
 TODO.md
+.nyc_output

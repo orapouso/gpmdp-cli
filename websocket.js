@@ -14,10 +14,7 @@ class WebSocketWrapper extends EventEmitter {
     this.ws.on('message', (data) => {
       debug('message', data)
       let payload = JSON.parse(data)
-      if ('channel' in payload) {
-        debug('message', payload.channel)
-        this.emit(payload.channel, payload)
-      }
+      this.emit(payload.channel, payload)
     })
   }
 
