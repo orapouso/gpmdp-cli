@@ -1,9 +1,11 @@
 {
   "name": "gpmdp-cli",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Console cli for Google Play Music Desktop Player",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "debug": "DEBUG=gpmdp*,-gpmdp:ws node index.js",
     "test": "nyc ava ./test/*.js --verbose",
     "report": "nyc report --reporter=lcov",
     "check": "nyc check-coverage"
@@ -40,6 +42,7 @@
     "statements": 100,
     "functions": 100,
     "branches": 100,
+    "include": ["src/**"],
     "exclude": ["**/node_modules/**"],
     "reporter": ["lcov"],
     "cache": true,

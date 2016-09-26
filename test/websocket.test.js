@@ -7,7 +7,7 @@ class WebSocketMock extends EventEmitter {
   send () {}
 }
 
-const WebSocket = proxyquire('../websocket', {
+const WebSocket = proxyquire('../src/websocket', {
   'ws': WebSocketMock
 })
 
