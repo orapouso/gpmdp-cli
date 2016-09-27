@@ -1,0 +1,17 @@
+{
+  "connect": {
+    "request": {
+      "namespace": "connect",
+      "method": "connect",
+      "arguments": ["Google Play Music Desktop Player"]
+    },
+    "response_code_required": {
+      "channel": "connect",
+      "payload": "CODE_REQUIRED"
+    },
+    "response_token": {
+      "channel": "connect",
+      "payload": "GPMDP_TOKEN"
+    }
+  }
+}

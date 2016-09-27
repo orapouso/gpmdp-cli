@@ -12,44 +12,82 @@ const conProtocol = {
   arguments: ['Google Play Music Desktop Player']
 }
 
-module.exports = {
-  TOKEN_FILE: path.join(process.env.HOME, GPMDP_HOME, 'json_store/gpmdp_token.json'),
-  connect: function (ws) {
-    return new Promise((res) => {
-      ws.on('connect', (msg) => {
-        if (msg.payload === 'CODE_REQUIRED') {
-          debug('CODE_REQUIRED')
-          readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-          }).question('Write down the 4 digit code: ', (code) => {
-            debug('CODE:', code)
-            conProtocol.arguments.push(code)
-            ws.send(conProtocol)
-          });
-        } else {
-          debug('TOKEN received', msg)
-          fs.writeFileAsync(this.TOKEN_FILE, JSON.stringify({token: msg.payload}))
-            .then(() => {
-              conProtocol.arguments.splice(1, 1, msg.payload)
-              ws.send(conProtocol)
-              res()
-            })
-        }
-      })
+const TOKEN_FILE = path.join(process.env.HOME, GPMDP_HOME, 'json_store/gpmdp_token.json')
 
-      fs.readFileAsync(this.TOKEN_FILE)
+let ConnectChannel = function (options={}) {
+  return {
+    tokenFile: options.tokenFile || TOKEN_FILE,
+    connect: function (ws) {
+      this.ws = ws
+      return Promise.resolve()
+    },
+
+    checkToken: function () {
+      debug('check token')
+
+      return fs.readFileAsync(this.tokenFile)
         .then((data) => {
           data = JSON.parse(data)
-          debug('token found, sending to gpmdp', data)
-          conProtocol.arguments.push(data.token)
-          ws.send(conProtocol)
-          res()
+          debug('token found', data)
+          return data.token
         })
-        .catch((error) => { // no token
-          debug('no token found, requesting connection', error)
-          ws.send(conProtocol)
-        })
-    })
+    },
+
+    requestConnection: function () {
+      debug('requesting connection')
+
+      return new Promise((res, rej) => {
+        this.ws.once('connect', (msg) => this.checkPayload(msg, res, rej))
+        this.ws.send(conProtocol)
+      })
+    },
+
+    requestCode: function() {
+      debug('requesting code')
+
+      return new Promise((res) => {
+        readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        }).question('Write down the 4 digit code: ', (code) => {
+          debug('CODE:', code)
+          res(code)
+        });
+      })
+    },
+
+    sendCode: function (code) {
+      return new Promise((res, rej) => {
+        this.ws.once('connect', (msg) => this.checkPayload(msg, res, rej))
+        conProtocol.arguments.push(code)
+        this.ws.send(conProtocol)
+      })
+    },
+
+    sendToken: function (token) {
+      debug('sending token')
+      conProtocol.arguments.push(token)
+      this.ws.send(conProtocol)
+      return Promise.resolve()
+    },
+
+    checkPayload: function (msg, res, rej) {
+      if (!msg || !('payload' in msg)) {
+        rej(new Error('No payload in received msg'))
+      } else if (msg.payload === 'CODE_REQUIRED') {
+        debug('CODE_REQUIRED')
+        res(msg)
+      } else {
+        debug('TOKEN received', msg)
+        fs.writeFileAsync(this.tokenFile, JSON.stringify({token: msg.payload}))
+          .then(() => {
+            conProtocol.arguments.splice(1, 1, msg.payload)
+            this.ws.send(conProtocol)
+            res()
+          })
+      }
+    }
   }
 }
+
+module.exports = ConnectChannel

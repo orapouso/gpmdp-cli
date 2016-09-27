@@ -48,6 +48,7 @@ test('send with string', (t) => {
   ws.send(str)
   t.true(ws.ws.send.called)
   t.true(ws.ws.send.calledWith(str))
+  ws.ws.send.restore()
 })
 
 test('send with object', (t) => {
@@ -58,4 +59,5 @@ test('send with object', (t) => {
   ws.send(obj)
   t.true(ws.ws.send.called)
   t.true(ws.ws.send.calledWith(JSON.stringify(obj)))
+  ws.ws.send.restore()
 })
