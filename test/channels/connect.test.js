@@ -45,11 +45,13 @@ test('request connection', (t) => {
     ws.emit('connect', protocol.connect.response_code_required)
   })
 
+  let expectedRequest = protocol.connect.request
+
   return channel.connect(ws)
     .then(() => channel.requestConnection())
     .then(() => {
       t.true(ws.send.calledOnce)
-      t.true(ws.send.calledWith(protocol.connect.request))
+      t.true(ws.send.calledWith(expectedRequest))
       ws.send.restore()
     })
 })
@@ -66,5 +68,24 @@ test('request four digit code from user', (t) => {
     .then((code) => {
       process.stdout.write = write
       t.true(FOUR_DIGIT_CODE === code)
+    })
+})
+
+test.only('send four digit code to gpmdp', (t) => {
+  let ws = new WebSocketMock()
+  let channel = connectChannel()
+  sinon.stub(ws, 'send', () => {
+    ws.emit('connect', protocol.connect.response_token)
+  })
+
+  let expectedRequest = Object.assign({}, protocol.connect.request)
+  expectedRequest.arguments.push(FOUR_DIGIT_CODE)
+
+  return channel.connect(ws)
+    .then(() => channel.sendCode(FOUR_DIGIT_CODE))
+    .then((token) => {
+      t.true(ws.send.calledOnce)
+      t.true(ws.send.calledWith(expectedRequest))
+      t.true(token === protocol.connect.response_token.payload)
     })
 })

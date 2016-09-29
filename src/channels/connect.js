@@ -80,11 +80,8 @@ let ConnectChannel = function (options={}) {
       } else {
         debug('TOKEN received', msg)
         fs.writeFileAsync(this.tokenFile, JSON.stringify({token: msg.payload}))
-          .then(() => {
-            conProtocol.arguments.splice(1, 1, msg.payload)
-            this.ws.send(conProtocol)
-            res()
-          })
+          .then(() => res(msg.payload))
+          .catch((err) => rej(err))
       }
     }
   }
