@@ -79,10 +79,19 @@ let ConnectChannel = function (options={}) {
 
     sendToken: function (token) {
       debug('sending token')
-      let proto = cloneDeep(conProtocol)
-      proto.arguments.push(token)
-      this.ws.send(proto)
-      return Promise.resolve()
+      return new Promise((res, rej) => {
+        let proto = cloneDeep(conProtocol)
+        let resolveTimeout = setTimeout(res, 1300)
+
+        this.ws.once('connect', () => {
+          debug('invalid token, start again')
+          clearTimeout(resolveTimeout)
+          rej(new Error('invalid_token'))
+        })
+
+        proto.arguments.push(token)
+        this.ws.send(proto)
+      })
     },
 
     checkPayload: function (msg, res, rej) {
@@ -90,7 +99,7 @@ let ConnectChannel = function (options={}) {
         debug('CODE_REQUIRED')
         res(msg)
       } else {
-        debug('TOKEN received', msg, this.tokenFile)
+        debug('TOKEN received', msg)
         fs.writeFileAsync(this.tokenFile, JSON.stringify({token: msg.payload}))
           .then(() => res(msg.payload))
           .catch((err) => rej(err))
