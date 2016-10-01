@@ -20,7 +20,7 @@ let ConnectChannel = function (options={}) {
     tokenFile: options.tokenFile || TOKEN_FILE,
     connect: function (ws) {
       this.ws = ws
-      return Promise.resolve()
+      return this
     },
 
     start: function () {
