@@ -6,6 +6,7 @@ const ws = new WebSocket('ws://localhost:5672')
 
 ws.on('open', () => {
   debug('socket connected')
-  connectChannel.connect(ws)
+  connectChannel().connect(ws)
+    .start()
     .then(() => debug('connected'))
 });

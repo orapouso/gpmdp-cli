@@ -1,6 +1,6 @@
 const EventEmitter = require('events')
 const WebSocket = require('ws');
-const debug = require('debug')('gpmdp:ws')
+const debug = require('debug')('gpmdp-cli:ws')
 
 class WebSocketWrapper extends EventEmitter {
   constructor (url) {
@@ -12,8 +12,8 @@ class WebSocketWrapper extends EventEmitter {
     })
 
     this.ws.on('message', (data) => {
-      debug('message', data)
       let payload = JSON.parse(data)
+      debug('message', payload.channel)
       this.emit(payload.channel, payload)
     })
   }
