@@ -1,4 +1,5 @@
 const debug = require('debug')('gpmdp-cli:connect')
+const cloneDeep = require('lodash.clonedeep')
 const readline = require('readline')
 const Promise = require('bluebird')
 const fs = Promise.promisifyAll(require('fs'))
@@ -20,6 +21,17 @@ let ConnectChannel = function (options={}) {
     connect: function (ws) {
       this.ws = ws
       return Promise.resolve()
+    },
+
+    start: function () {
+      return this.checkToken()
+        .then((token) => this.sendToken(token))
+        .catch(() => {
+          return this.requestConnection()
+            .then(() => this.requestCode())
+            .then((code) => this.sendCode(code))
+            .then((token) => this.sendToken(token))
+        })
     },
 
     checkToken: function () {
@@ -59,26 +71,26 @@ let ConnectChannel = function (options={}) {
     sendCode: function (code) {
       return new Promise((res, rej) => {
         this.ws.once('connect', (msg) => this.checkPayload(msg, res, rej))
-        conProtocol.arguments.push(code)
-        this.ws.send(conProtocol)
+        let proto = cloneDeep(conProtocol)
+        proto.arguments.push(code)
+        this.ws.send(proto)
       })
     },
 
     sendToken: function (token) {
       debug('sending token')
-      conProtocol.arguments.push(token)
-      this.ws.send(conProtocol)
+      let proto = cloneDeep(conProtocol)
+      proto.arguments.push(token)
+      this.ws.send(proto)
       return Promise.resolve()
     },
 
     checkPayload: function (msg, res, rej) {
-      if (!msg || !('payload' in msg)) {
-        rej(new Error('No payload in received msg'))
-      } else if (msg.payload === 'CODE_REQUIRED') {
+      if (msg.payload === 'CODE_REQUIRED') {
         debug('CODE_REQUIRED')
         res(msg)
       } else {
-        debug('TOKEN received', msg)
+        debug('TOKEN received', msg, this.tokenFile)
         fs.writeFileAsync(this.tokenFile, JSON.stringify({token: msg.payload}))
           .then(() => res(msg.payload))
           .catch((err) => rej(err))
